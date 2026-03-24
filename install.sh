@@ -21,8 +21,11 @@ cat > "$PLIST_DEST" << EOF
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/python3</string>
-        <string>$SCRIPT_DIR/watcher.py</string>
+        <string>-m</string>
+        <string>watcher</string>
     </array>
+    <key>WorkingDirectory</key>
+    <string>$SCRIPT_DIR</string>
     <key>StartInterval</key>
     <integer>60</integer>
     <key>RunAtLoad</key>

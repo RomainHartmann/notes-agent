@@ -17,7 +17,7 @@ iPhone (Apple Notes)
 iCloud sync
     |
     v
-Mac mini (watcher.py, every 60s)
+Mac mini (python -m watcher, every 60s)
     |
     |-- task       -> Claude Code opens a Terminal, codes and merges
     |

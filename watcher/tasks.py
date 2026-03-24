@@ -1,0 +1,66 @@
+import os
+import tempfile
+
+from watcher.notes import run_applescript, build_replace_tag_command
+
+TASK_PROMPT = (
+    "Analyze the project and implement the requested feature.\n\n"
+    "If the feature or fix already exists in the code with no changes needed:\n"
+    "- Do not modify any project files.\n"
+    "- Create a file named .claude_feature_exists at the project root.\n"
+    "- Briefly explain what you found.\n\n"
+    "If it does not exist yet:\n"
+    "- Implement the necessary changes.\n"
+    "- Do not run any git operations (no commit, no push, no checkout).\n\n"
+    "Request: {task_description}"
+)
+
+
+def build_task_prompt(item):
+    return TASK_PROMPT.format(task_description=item["task_description"])
+
+
+def launch_claude_code(project_path, task_prompt, note_id, item, config):
+    safe_id = note_id.replace("/", "_").replace(":", "_").replace(" ", "_")
+    task_path = os.path.join(tempfile.gettempdir(), f"claude_task_{safe_id}.txt")
+    runner_path = os.path.join(tempfile.gettempdir(), f"run_claude_{safe_id}.sh")
+    claude_path = config.get("claude_path", "claude")
+    dev_branch = config["dev_branch"]
+    branch = item["branch_name"]
+    replace_cmd = build_replace_tag_command(
+        note_id, config["processed_tag"], config["exists_tag"]
+    )
+
+    commit_prefix = branch.split("/")[0] if "/" in branch else "feat"
+    commit_desc = branch.split("/", 1)[1].replace("-", " ") if "/" in branch else branch
+    safe_commit_msg = f"{commit_prefix}: {commit_desc}".replace('"', '\\"')
+
+    with open(task_path, "w") as f:
+        f.write(task_prompt)
+
+    with open(runner_path, "w") as f:
+        f.write("#!/bin/bash\n")
+        f.write(f'cd "{project_path}"\n\n')
+        f.write(f"git checkout {dev_branch} && git pull origin {dev_branch}\n")
+        f.write(f"git checkout -b {branch}\n\n")
+        f.write(f'TASK=$(cat "{task_path}")\n')
+        f.write(f'{claude_path} "$TASK"\n\n')
+        f.write('if [ -f ".claude_feature_exists" ]; then\n')
+        f.write('    rm -f ".claude_feature_exists"\n')
+        f.write(f"    git checkout {dev_branch}\n")
+        f.write(f"    git branch -d {branch}\n")
+        f.write(f"    {replace_cmd}\n")
+        f.write("else\n")
+        f.write("    git add -A\n")
+        f.write(f'    git commit -m "{safe_commit_msg}"\n')
+        f.write(f"    git checkout {dev_branch} && git merge {branch}\n")
+        f.write("fi\n\n")
+        f.write(f'rm -f "{task_path}" "{runner_path}"\n')
+
+    os.chmod(runner_path, 0o755)
+
+    script = f'''tell application "Terminal"
+    activate
+    do script "bash \\"{runner_path}\\""
+end tell'''
+    run_applescript(script)
