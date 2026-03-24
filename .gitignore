@@ -1,2 +1,5 @@
 config.json
+watcher.log
+__pycache__/
+*.pyc
 .claude/settings.local.json

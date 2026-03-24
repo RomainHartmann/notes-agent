@@ -1,32 +1,32 @@
-# Instructions projet
+# Project instructions
 
-## Langue
+## Language
 
-- Toujours communiquer en français avec l'utilisateur
-- Le code reste en anglais
-- Pas de commentaires dans le code
-- Un fichier = une responsabilité
+- Always communicate in French with the user
+- Code, comments, commits, docs, README: all in English
+- No comments in the code
+- One file = one responsibility
 
 ## Git
 
-- Commits : `type(scope): description` (ex: `feat(auth): add JWT refresh`)
-- Types : feat, fix, refactor, test, chore, docs
-- Un commit par changement logique, pas par fichier
-- Quand l'utilisateur valide une feature ("ok", "c'est bon", "valide", "push", "ship it"), faire `git add . && git commit && git push` immédiatement sans demander confirmation
-- Ne jamais laisser du travail non commité après validation
-- Ne jamais discard/revert du code (git checkout, git reset, etc.) sans demander confirmation
+- Commits: `type(scope): description` (e.g. `feat(auth): add JWT refresh`)
+- Types: feat, fix, refactor, test, chore, docs
+- One commit per logical change, not per file
+- When the user validates a feature ("ok", "c'est bon", "valide", "push", "ship it"), run `git add . && git commit && git push` immediately without asking
+- Never leave uncommitted work after validation
+- Never discard/revert code (git checkout, git reset, etc.) without asking
 
 ## Co-Authored-By
 
-- Ajouter `Co-Authored-By: Claude <noreply@anthropic.com>` uniquement quand Claude a réellement contribué au code (logique, architecture, implémentation)
-- Ne pas l'ajouter sur les commits triviaux (renommage de variable, formatage, déplacement de fichier)
+- Add `Co-Authored-By: Claude <noreply@anthropic.com>` only when Claude genuinely contributed to the code (logic, architecture, implementation)
+- Do not add it on trivial commits (variable rename, formatting, file move)
 
 ## Known Gotchas
 
-_Ajouter ici les problèmes rencontrés. Format :_
-
-- _[date] description du problème et règle pour l'éviter_
+- [2026-03-25] Claude Code does not always have permissions for git commands. Git operations (checkout, branch, commit, merge) are hardcoded in the shell wrapper script, not delegated to Claude Code.
+- [2026-03-25] The launchd PATH is limited (/usr/bin:/bin:/usr/sbin:/sbin). If `claude` is not found, use `claude_path` in config.json with the absolute path.
+- [2026-03-25] Apple Notes body is HTML. Responses written to notes must use `<br>` for line breaks, not `\n`.
 
 ## Lessons Learned
 
-_Quand l'utilisateur me corrige ou que je fais une erreur, ajouter une règle ici. Court et actionnable. Nettoyer régulièrement les doublons et règles obsolètes._
+- [2026-03-25] No direct Claude API in this project. Everything goes through Claude Code CLI (`claude -p` for analysis, `claude` interactive for tasks). Never add HTTP calls to api.anthropic.com.

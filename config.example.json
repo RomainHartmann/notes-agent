@@ -1,0 +1,11 @@
+{
+    "notes_folder": "your-notes-folder",
+    "processed_tag": "claude-done",
+    "exists_tag": "claude-exists",
+    "frontend_path": "/path/to/your/frontend/repo",
+    "backend_path": "/path/to/your/backend/repo",
+    "dev_branch": "dev",
+    "claude_path": "claude",
+    "pushover_app_token": "your-pushover-app-token",
+    "pushover_user_key": "your-pushover-user-key"
+}
