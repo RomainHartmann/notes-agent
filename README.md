@@ -65,6 +65,8 @@ The watcher queries Apple Notes via AppleScript, sends each unprocessed note to 
 
 The watcher runs in the background, every 60 seconds.
 
+**Important:** Claude Code runs with `--dangerously-skip-permissions` for unattended operation. Each target repo **must** have a well-configured `.claude/CLAUDE.md` before being used with the watcher. This file acts as the primary guardrail for autonomous code generation.
+
 ## Configuration
 
 | Field | Description |
@@ -76,6 +78,7 @@ The watcher runs in the background, every 60 seconds.
 | `backend_path` | Absolute path to the backend repo |
 | `dev_branch` | Target development branch |
 | `claude_path` | Path to the Claude Code binary (default: `claude`) |
+| `claude_model` | Claude model to use (e.g. `opus[1m]`, `sonnet`) |
 | `pushover_app_token` | Pushover application token |
 | `pushover_user_key` | Pushover user key |
 

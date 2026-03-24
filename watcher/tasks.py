@@ -3,6 +3,23 @@ import tempfile
 
 from watcher.notes import run_applescript, build_replace_tag_command
 
+DEFAULT_CLAUDE_MD = """\
+# Project rules
+
+## Safety
+
+- Never delete or overwrite existing files unless the task explicitly requires it
+- Never run destructive commands (rm -rf, drop tables, etc.)
+- Never run any git operations (no commit, no push, no checkout, no branch)
+- Keep changes minimal and focused on the requested task
+- Do not modify files unrelated to the task
+
+## Code style
+
+- No comments unless the logic is non-obvious
+- Prefer editing existing files over creating new ones
+"""
+
 TASK_PROMPT = (
     "Analyze the project and implement the requested feature.\n\n"
     "If the feature or fix already exists in the code with no changes needed:\n"
@@ -41,10 +58,22 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config):
     with open(runner_path, "w") as f:
         f.write("#!/bin/bash\n")
         f.write(f'cd "{project_path}"\n\n')
-        f.write(f"git checkout {dev_branch} && git pull origin {dev_branch}\n")
+        f.write(f"git checkout {dev_branch} 2>/dev/null || git checkout -b {dev_branch}\n")
+        f.write(f"git pull origin {dev_branch} 2>/dev/null || true\n")
+        f.write('git log -1 >/dev/null 2>&1 || git commit --allow-empty -m "init"\n')
         f.write(f"git checkout -b {branch}\n\n")
+        f.write('if [ ! -f ".gitignore" ]; then\n')
+        f.write('    echo ".DS_Store" > .gitignore\n')
+        f.write('fi\n')
+        f.write('grep -qx ".DS_Store" .gitignore 2>/dev/null || echo ".DS_Store" >> .gitignore\n\n')
+        f.write('if [ ! -f ".claude/CLAUDE.md" ] && [ ! -f "CLAUDE.md" ]; then\n')
+        f.write('    mkdir -p .claude\n')
+        f.write(f'    cat > .claude/CLAUDE.md << \'CLAUDEMD\'\n{DEFAULT_CLAUDE_MD}CLAUDEMD\n')
+        f.write('fi\n\n')
         f.write(f'TASK=$(cat "{task_path}")\n')
-        f.write(f'{claude_path} "$TASK"\n\n')
+        claude_model = config.get("claude_model", "")
+        model_flag = f' --model "{claude_model}"' if claude_model else ""
+        f.write(f'caffeinate -s {claude_path} -p --dangerously-skip-permissions{model_flag} "$TASK"\n\n')
         f.write('if [ -f ".claude_feature_exists" ]; then\n')
         f.write('    rm -f ".claude_feature_exists"\n')
         f.write(f"    git checkout {dev_branch}\n")
@@ -53,7 +82,7 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config):
         f.write("else\n")
         f.write("    git add -A\n")
         f.write(f'    git commit -m "{safe_commit_msg}"\n')
-        f.write(f"    git checkout {dev_branch} && git merge {branch}\n")
+        f.write(f"    git checkout {dev_branch} && git merge {branch} && git push -u origin {dev_branch}\n")
         f.write("fi\n\n")
         f.write(f'rm -f "{task_path}" "{runner_path}"\n')
 

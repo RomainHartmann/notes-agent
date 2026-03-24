@@ -27,19 +27,32 @@ ANALYSIS_PROMPT = (
 )
 
 
-def analyze_with_claude(title, body, claude_path):
+def strip_markdown_fences(text):
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
+def analyze_with_claude(title, body, claude_path, claude_model=None):
     prompt = (
         f"{ANALYSIS_PROMPT}\n\n"
         f"Note title: {title}\n"
         f"Note content:\n"
         f"{body if body else '(empty body, infer from title only)'}"
     )
+    cmd = [claude_path, "-p", prompt, "--output-format", "json"]
+    if claude_model:
+        cmd.extend(["--model", claude_model])
     result = subprocess.run(
-        [claude_path, "-p", prompt, "--output-format", "json"],
+        cmd,
         capture_output=True, text=True, timeout=120,
         cwd=tempfile.gettempdir()
     )
     if result.returncode != 0:
         raise Exception(result.stderr.strip())
     envelope = json.loads(result.stdout)
-    return json.loads(envelope["result"])
+    raw = strip_markdown_fences(envelope["result"])
+    return json.loads(raw)

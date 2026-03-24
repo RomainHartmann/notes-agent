@@ -39,7 +39,7 @@ end tell'''
     _, code = run_applescript(script)
     if code != 0 or not os.path.exists(tmp_path):
         return None, None
-    with open(tmp_path) as f:
+    with open(tmp_path, encoding="mac_roman") as f:
         content = f.read()
     os.remove(tmp_path)
     parts = content.split("\n---SEP---\n", 1)
@@ -65,7 +65,13 @@ end tell'''
 def tag_note(note_id, tag):
     script = f'''tell application "Notes"
     set aNote to note id "{note_id}"
-    set body of aNote to (body of aNote) & " #{tag}"
+    set b to body of aNote
+    set AppleScript's text item delimiters to "</div>"
+    set parts to text items of b
+    set firstPart to item 1 of parts
+    set restText to (rest of parts) as text
+    set AppleScript's text item delimiters to ""
+    set body of aNote to firstPart & "</div><div>#{tag}</div>" & restText
 end tell'''
     run_applescript(script)
 

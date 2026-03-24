@@ -38,6 +38,7 @@ def main():
     done_tag = config["processed_tag"]
     exists_tag = config["exists_tag"]
     claude_path = config.get("claude_path", "claude")
+    claude_model = config.get("claude_model", "")
 
     note_ids = get_unprocessed_note_ids(folder, done_tag, exists_tag)
     if not note_ids:
@@ -53,7 +54,7 @@ def main():
             continue
 
         try:
-            analysis = analyze_with_claude(title, body, claude_path)
+            analysis = analyze_with_claude(title, body, claude_path, claude_model)
         except Exception as e:
             log(f"Claude analysis error for '{title}': {e}")
             continue

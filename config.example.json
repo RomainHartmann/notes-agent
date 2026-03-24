@@ -6,6 +6,7 @@
     "backend_path": "/path/to/your/backend/repo",
     "dev_branch": "dev",
     "claude_path": "claude",
+    "claude_model": "opus[1m]",
     "pushover_app_token": "your-pushover-app-token",
     "pushover_user_key": "your-pushover-user-key"
 }
