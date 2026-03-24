@@ -18,12 +18,7 @@ def process_item(item, note_id, title, config):
         tag_note(note_id, done_tag)
         task_prompt = build_task_prompt(item)
         project_path = config["frontend_path"] if item["target"] == "frontend" else config["backend_path"]
-        launch_claude_code(project_path, task_prompt, note_id, item, config)
-        send_pushover(
-            f"\U0001f6e0 Task launched: {title}",
-            f"{item['target'].capitalize()} - {item['branch_name']}",
-            config
-        )
+        launch_claude_code(project_path, task_prompt, note_id, item, config, title)
         log(f"Task launched: '{title}' -> {item['target']} / {item['branch_name']}")
 
 

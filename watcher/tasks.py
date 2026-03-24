@@ -37,7 +37,7 @@ def build_task_prompt(item):
     return TASK_PROMPT.format(task_description=item["task_description"])
 
 
-def launch_claude_code(project_path, task_prompt, note_id, item, config):
+def launch_claude_code(project_path, task_prompt, note_id, item, config, title=""):
     safe_id = note_id.replace("/", "_").replace(":", "_").replace(" ", "_")
     task_path = os.path.join(tempfile.gettempdir(), f"claude_task_{safe_id}.txt")
     runner_path = os.path.join(tempfile.gettempdir(), f"run_claude_{safe_id}.sh")
@@ -74,15 +74,28 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config):
         claude_model = config.get("claude_model", "")
         model_flag = f' --model "{claude_model}"' if claude_model else ""
         f.write(f'caffeinate -s {claude_path} -p --dangerously-skip-permissions{model_flag} "$TASK"\n\n')
+        pushover_token = config.get("pushover_app_token", "")
+        pushover_user = config.get("pushover_user_key", "")
+        safe_title = title.replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+        target = item["target"].capitalize()
+
         f.write('if [ -f ".claude_feature_exists" ]; then\n')
         f.write('    rm -f ".claude_feature_exists"\n')
         f.write(f"    git checkout {dev_branch}\n")
         f.write(f"    git branch -d {branch}\n")
         f.write(f"    {replace_cmd}\n")
+        f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
+                f'-F "title=Feature already exists: {safe_title}" '
+                f'-F "message={target} - {branch}" '
+                f'https://api.pushover.net/1/messages.json > /dev/null\n')
         f.write("else\n")
         f.write("    git add -A\n")
         f.write(f'    git commit -m "{safe_commit_msg}"\n')
         f.write(f"    git checkout {dev_branch} && git merge {branch} && git push -u origin {dev_branch}\n")
+        f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
+                f'-F "title=Task done: {safe_title}" '
+                f'-F "message={target} - {branch}" '
+                f'https://api.pushover.net/1/messages.json > /dev/null\n')
         f.write("fi\n\n")
         f.write(f'rm -f "{task_path}" "{runner_path}"\n')
 
