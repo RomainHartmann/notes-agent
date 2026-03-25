@@ -8,8 +8,7 @@ DEFAULT_CLAUDE_MD = """\
 
 ## Safety
 
-- Never delete or overwrite existing files unless the task explicitly requires it
-- Never run destructive commands (rm -rf, drop tables, etc.)
+- Only delete or overwrite files if the task explicitly requires it
 - Never run any git operations (no commit, no push, no checkout, no branch)
 - Keep changes minimal and focused on the requested task
 - Do not modify files unrelated to the task
