@@ -62,7 +62,13 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
         f.write(f"git checkout {dev_branch} 2>/dev/null || git checkout -b {dev_branch}\n")
         f.write(f"git pull origin {dev_branch} 2>/dev/null || true\n")
         f.write('git log -1 >/dev/null 2>&1 || git commit --allow-empty -m "init"\n')
-        f.write(f"git checkout -b {branch}\n\n")
+        f.write(f'BRANCH="{branch}"\n')
+        f.write(f'N=2\n')
+        f.write(f'while git show-ref --verify --quiet "refs/heads/$BRANCH"; do\n')
+        f.write(f'    BRANCH="{branch}-$N"\n')
+        f.write(f'    N=$((N+1))\n')
+        f.write(f'done\n')
+        f.write(f'git checkout -b "$BRANCH"\n\n')
         f.write('if [ ! -f ".gitignore" ]; then\n')
         f.write('    echo ".DS_Store" > .gitignore\n')
         f.write('fi\n')
@@ -83,19 +89,19 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
         f.write('if [ -f ".claude_feature_exists" ]; then\n')
         f.write('    rm -f ".claude_feature_exists"\n')
         f.write(f"    git checkout {dev_branch}\n")
-        f.write(f"    git branch -d {branch}\n")
+        f.write('    git branch -d "$BRANCH"\n')
         f.write(f"    {replace_cmd}\n")
         f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
                 f'-F "title=Feature already exists: {safe_title}" '
-                f'-F "message={target} - {branch}" '
+                f'-F "message={target} - $BRANCH" '
                 f'https://api.pushover.net/1/messages.json > /dev/null\n')
         f.write("else\n")
         f.write("    git add -A\n")
         f.write(f'    git commit -m "{safe_commit_msg}"\n')
-        f.write(f"    git checkout {dev_branch} && git merge {branch} && git push -u origin {dev_branch}\n")
+        f.write(f'    git checkout {dev_branch} && git merge "$BRANCH" && git push -u origin {dev_branch}\n')
         f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
                 f'-F "title=Task done: {safe_title}" '
-                f'-F "message={target} - {branch}" '
+                f'-F "message={target} - $BRANCH" '
                 f'https://api.pushover.net/1/messages.json > /dev/null\n')
         f.write("fi\n\n")
         f.write(f'rm -f "{task_path}" "{runner_path}"\n')
