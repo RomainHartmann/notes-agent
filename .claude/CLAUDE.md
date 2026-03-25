@@ -33,6 +33,7 @@
 - [2026-03-25] `claude -p` wraps JSON responses in markdown fences (` ```json ... ``` `) even when told not to. Always strip fences before parsing.
 - [2026-03-25] AppleScript `write` uses Mac Roman encoding by default. Always read temp files with `encoding="mac_roman"` in Python.
 - [2026-03-25] Claude Code runs with `--dangerously-skip-permissions` for unattended operation. The CLAUDE.md in each target repo is the only guardrail.
+- [2026-03-25] Claude Code in `-p` mode may still refuse destructive Bash commands (like `rm`) even with `--dangerously-skip-permissions`. File creation and editing work fine, but deletion is unreliable.
 
 ## Lessons Learned
 
