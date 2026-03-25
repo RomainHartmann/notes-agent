@@ -39,8 +39,9 @@ def build_task_prompt(item):
 
 def launch_claude_code(project_path, task_prompt, note_id, item, config, title=""):
     safe_id = note_id.replace("/", "_").replace(":", "_").replace(" ", "_")
-    task_path = os.path.join(tempfile.gettempdir(), f"claude_task_{safe_id}.txt")
-    runner_path = os.path.join(tempfile.gettempdir(), f"run_claude_{safe_id}.sh")
+    branch_id = item["branch_name"].replace("/", "_")
+    task_path = os.path.join(tempfile.gettempdir(), f"claude_task_{safe_id}_{branch_id}.txt")
+    runner_path = os.path.join(tempfile.gettempdir(), f"run_claude_{safe_id}_{branch_id}.sh")
     claude_path = config.get("claude_path", "claude")
     dev_branch = config["dev_branch"]
     branch = item["branch_name"]
