@@ -66,6 +66,7 @@ def tag_note(note_id, tag):
     script = f'''tell application "Notes"
     set aNote to note id "{note_id}"
     set b to body of aNote
+    if b contains "#{tag}" then return
     set AppleScript's text item delimiters to "</div>"
     set parts to text items of b
     set firstPart to item 1 of parts

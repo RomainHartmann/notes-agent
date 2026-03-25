@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLIST_LABEL="com.claude.noteswatcher"
 PLIST_DEST="$HOME/Library/LaunchAgents/$PLIST_LABEL.plist"
 
+PYTHON_PATH=$(which python3)
 mkdir -p "$HOME/Library/LaunchAgents"
 
 if [ -f "$PLIST_DEST" ]; then
@@ -20,7 +21,7 @@ cat > "$PLIST_DEST" << EOF
     <string>$PLIST_LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
+        <string>$PYTHON_PATH</string>
         <string>-m</string>
         <string>watcher</string>
     </array>
