@@ -21,6 +21,10 @@ ANALYSIS_PROMPT = (
     '- "response": structured answer in the same language as the note. Be concrete, '
     "give pros/cons or recommendations if relevant. Plain text, no markdown.\n"
     '- "pushover_summary": single short sentence (max 100 chars) summarizing the response\n\n'
+    'If the note is too vague or ambiguous to act on, return a single item of type "clarification":\n'
+    '- "type": "clarification"\n'
+    '- "questions": specific questions to ask the user, in the same language as the note. Plain text.\n'
+    '- "pushover_summary": single short sentence (max 100 chars) summarizing what is unclear\n\n'
     "Deduction rules for target when type is task:\n"
     "- frontend: UI, component, style, Flutter, widget, screen, page, display, layout, animation\n"
     "- backend: API, database, server, route, endpoint, model, auth, query, migration, cron"
