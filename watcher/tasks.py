@@ -21,6 +21,9 @@ DEFAULT_CLAUDE_MD = """\
 
 TASK_PROMPT = (
     "Analyze the project and implement the requested feature.\n\n"
+    "You are running in fully autonomous mode. All permissions are granted. "
+    "Do not ask for confirmation. Execute all necessary commands directly, "
+    "including file deletion if the task requires it.\n\n"
     "If the feature or fix already exists in the code with no changes needed:\n"
     "- Do not modify any project files.\n"
     "- Create a file named .claude_feature_exists at the project root.\n"
