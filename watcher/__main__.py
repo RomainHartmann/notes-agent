@@ -23,9 +23,12 @@ def process_item(item, note_id, title, body, config):
         else:
             response = item["response"]
         if item.get("needs_rodin"):
-            question = f"{title}\n{body}" if body else title
-            rodin_opinion = rodin_reflect(question, response, claude_path, claude_model)
-            response = f"{response}\n\n[Rodin] {rodin_opinion}"
+            try:
+                question = f"{title}\n{body}" if body else title
+                rodin_opinion = rodin_reflect(question, response, claude_path, claude_model)
+                response = f"{response}\n\n[Rodin] {rodin_opinion}"
+            except Exception as e:
+                log(f"Rodin error for '{title}': {e}")
         write_response_to_note(note_id, response)
         send_pushover(f"\U0001f4a1 {title}", item["pushover_summary"], config)
         tag_note(note_id, done_tag)
