@@ -11,6 +11,9 @@ ANALYSIS_PROMPT = (
     "architectural thinking, opinion request, or anything that does not require "
     "touching code right now).\n\n"
     "When ambiguous, pick the dominant type.\n\n"
+    "If a single request requires changes in BOTH frontend and backend, split it "
+    "into two separate task items (one per target). Each task_description must be "
+    "self-contained so it can be implemented independently.\n\n"
     'For each item of type "task":\n'
     '- "type": "task"\n'
     '- "target": "frontend" or "backend"\n'

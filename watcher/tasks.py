@@ -58,19 +58,25 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
     with open(task_path, "w") as f:
         f.write(task_prompt)
 
+    worktree_dir = os.path.join(tempfile.gettempdir(), f"claude_worktree_{branch_id}")
+
     with open(runner_path, "w") as f:
         f.write("#!/bin/bash\n")
-        f.write(f'cd "{project_path}"\n\n')
+        f.write(f'REPO="{project_path}"\n')
+        f.write(f'WORKTREE="{worktree_dir}"\n\n')
+        f.write(f'cd "$REPO"\n')
         f.write(f"git checkout {dev_branch} 2>/dev/null || git checkout -b {dev_branch}\n")
         f.write(f"git pull origin {dev_branch} 2>/dev/null || true\n")
-        f.write('git log -1 >/dev/null 2>&1 || git commit --allow-empty -m "init"\n')
+        f.write('git log -1 >/dev/null 2>&1 || git commit --allow-empty -m "init"\n\n')
         f.write(f'BRANCH="{branch}"\n')
-        f.write(f'N=2\n')
-        f.write(f'while git show-ref --verify --quiet "refs/heads/$BRANCH"; do\n')
+        f.write('N=2\n')
+        f.write('while git show-ref --verify --quiet "refs/heads/$BRANCH"; do\n')
         f.write(f'    BRANCH="{branch}-$N"\n')
-        f.write(f'    N=$((N+1))\n')
-        f.write(f'done\n')
-        f.write(f'git checkout -b "$BRANCH"\n\n')
+        f.write('    N=$((N+1))\n')
+        f.write('done\n\n')
+        f.write('rm -rf "$WORKTREE"\n')
+        f.write('git worktree add "$WORKTREE" -b "$BRANCH"\n')
+        f.write('cd "$WORKTREE"\n\n')
         f.write('if [ ! -f ".gitignore" ]; then\n')
         f.write('    echo ".DS_Store" > .gitignore\n')
         f.write('fi\n')
@@ -90,7 +96,8 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
 
         f.write('if [ -f ".claude_feature_exists" ]; then\n')
         f.write('    rm -f ".claude_feature_exists"\n')
-        f.write(f"    git checkout {dev_branch}\n")
+        f.write('    cd "$REPO"\n')
+        f.write('    git worktree remove "$WORKTREE" --force\n')
         f.write('    git branch -d "$BRANCH"\n')
         f.write(f"    {replace_cmd}\n")
         f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
@@ -100,7 +107,13 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
         f.write("else\n")
         f.write("    git add -A\n")
         f.write(f'    git commit -m "{safe_commit_msg}"\n')
-        f.write(f'    git checkout {dev_branch} && git merge "$BRANCH" && git push -u origin {dev_branch}\n')
+        f.write('    cd "$REPO"\n')
+        f.write(f"    git checkout {dev_branch}\n")
+        f.write(f'    git pull --rebase origin {dev_branch} 2>/dev/null || true\n')
+        f.write(f'    git merge "$BRANCH"\n')
+        f.write(f'    git push -u origin {dev_branch}\n')
+        f.write('    git worktree remove "$WORKTREE" --force\n')
+        f.write('    git branch -d "$BRANCH"\n')
         f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
                 f'-F "title=Task done: {safe_title}" '
                 f'-F "message={target} - $BRANCH" '
