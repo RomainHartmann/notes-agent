@@ -18,9 +18,15 @@ ANALYSIS_PROMPT = (
     '- "task_description": complete task description in the same language as the note\n\n'
     'For each item of type "reflection":\n'
     '- "type": "reflection"\n'
-    '- "response": structured answer in the same language as the note. Be concrete, '
-    "give pros/cons or recommendations if relevant. Plain text, no markdown.\n"
-    '- "pushover_summary": single short sentence (max 100 chars) summarizing the response\n\n'
+    '- "needs_code": true if answering accurately requires reading the codebase '
+    "(e.g. checking a model, a config, a limit, a behavior). false otherwise.\n"
+    '- "target": (only when needs_code is true) "frontend" or "backend" — '
+    "which codebase to inspect. Use the same deduction rules as for tasks.\n"
+    '- "response": (only when needs_code is false) structured answer in the same '
+    "language as the note. Be concrete, give pros/cons or recommendations if relevant. "
+    "Plain text, no markdown.\n"
+    '- "pushover_summary": single short sentence (max 100 chars) summarizing the '
+    "response or the question being investigated\n\n"
     'If the note is too vague or ambiguous to act on, return a single item of type "clarification":\n'
     '- "type": "clarification"\n'
     '- "questions": specific questions to ask the user, in the same language as the note. Plain text.\n'
@@ -38,6 +44,36 @@ def strip_markdown_fences(text):
     if text.endswith("```"):
         text = text[:-3]
     return text.strip()
+
+
+CODE_REFLECTION_PROMPT = (
+    "You are answering a developer's question about this codebase. "
+    "You have full read access to the project.\n\n"
+    "Rules:\n"
+    "- Start with the direct answer (yes/no, the value, the limit, etc.)\n"
+    "- Then give a brief explanation with evidence from the code (file, model, config)\n"
+    "- Same language as the question\n"
+    "- Plain text only, no markdown\n"
+    "- Be concise: 2-4 sentences max\n\n"
+    "Question: {question}"
+)
+
+
+def reflect_with_code(title, body, project_path, claude_path, claude_model=None):
+    question = f"{title}\n{body}" if body else title
+    prompt = CODE_REFLECTION_PROMPT.format(question=question)
+    cmd = [claude_path, "-p", prompt, "--output-format", "json"]
+    if claude_model:
+        cmd.extend(["--model", claude_model])
+    result = subprocess.run(
+        cmd,
+        capture_output=True, text=True, timeout=120,
+        cwd=project_path
+    )
+    if result.returncode != 0:
+        raise Exception(result.stderr.strip())
+    envelope = json.loads(result.stdout)
+    return strip_markdown_fences(envelope["result"])
 
 
 def analyze_with_claude(title, body, claude_path, claude_model=None):
