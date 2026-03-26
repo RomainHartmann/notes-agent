@@ -122,7 +122,10 @@ def main():
             continue
 
         for item in items:
-            process_item(item, note_id, title, body, config)
+            try:
+                process_item(item, note_id, title, body, config)
+            except Exception as e:
+                log(f"Error processing item in '{title}': {e}")
 
 
 main()
