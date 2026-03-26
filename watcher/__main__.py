@@ -2,7 +2,7 @@ import time
 
 from watcher.config import log, load_config
 from watcher.notes import get_unprocessed_note_ids, get_note_content, write_response_to_note, tag_note
-from watcher.analysis import analyze_with_claude
+from watcher.analysis import analyze_with_claude, reflect_with_code
 from watcher.tasks import build_task_prompt, launch_claude_code
 from watcher.notifications import send_pushover
 from watcher.state import load_state, save_state, content_hash
@@ -11,11 +11,18 @@ PENDING_TAG = "claude-pending"
 DEBOUNCE_SECONDS = 15
 
 
-def process_item(item, note_id, title, config):
+def process_item(item, note_id, title, body, config):
     done_tag = config["processed_tag"]
+    claude_path = config.get("claude_path", "claude")
+    claude_model = config.get("claude_model", "")
 
     if item["type"] == "reflection":
-        write_response_to_note(note_id, item["response"])
+        if item.get("needs_code"):
+            project_path = config["frontend_path"] if item["target"] == "frontend" else config["backend_path"]
+            response = reflect_with_code(title, body, project_path, claude_path, claude_model)
+        else:
+            response = item["response"]
+        write_response_to_note(note_id, response)
         send_pushover(f"\U0001f4a1 {title}", item["pushover_summary"], config)
         tag_note(note_id, done_tag)
         log(f"Reflection answered: '{title}'")
@@ -108,7 +115,7 @@ def main():
             continue
 
         for item in items:
-            process_item(item, note_id, title, config)
+            process_item(item, note_id, title, body, config)
 
 
 main()
