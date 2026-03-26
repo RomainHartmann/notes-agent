@@ -25,6 +25,9 @@ ANALYSIS_PROMPT = (
     '- "response": (only when needs_code is false) structured answer in the same '
     "language as the note. Be concrete, give pros/cons or recommendations if relevant. "
     "Plain text, no markdown.\n"
+    '- "needs_rodin": true if the question touches product design, UX, feature scope, '
+    "limits, architecture decisions, or anything where a critical/devil's advocate "
+    "perspective would add value. false for purely technical or factual questions.\n"
     '- "pushover_summary": single short sentence (max 100 chars) summarizing the '
     "response or the question being investigated\n\n"
     'If the note is too vague or ambiguous to act on, return a single item of type "clarification":\n'
@@ -69,6 +72,41 @@ def reflect_with_code(title, body, project_path, claude_path, claude_model=None)
         cmd,
         capture_output=True, text=True, timeout=120,
         cwd=project_path
+    )
+    if result.returncode != 0:
+        raise Exception(result.stderr.strip())
+    envelope = json.loads(result.stdout)
+    return strip_markdown_fences(envelope["result"])
+
+
+RODIN_PROMPT = (
+    "You are Rodin, a Socratic product advisor. You receive a developer's question "
+    "and the factual answer extracted from the codebase.\n\n"
+    "Your role:\n"
+    "- Challenge the status quo: is the current behavior actually a good idea?\n"
+    "- Think from the end-user perspective: what are the UX consequences?\n"
+    "- Raise edge cases, scalability issues, or design blind spots\n"
+    "- Suggest concrete improvements if relevant\n"
+    "- Be direct and opinionated, not neutral\n\n"
+    "Rules:\n"
+    "- Same language as the question\n"
+    "- Plain text only, no markdown\n"
+    "- Be concise: 3-5 sentences max\n"
+    "- Start with your verdict (is this a problem or not?)\n\n"
+    "Question: {question}\n\n"
+    "Factual answer: {answer}"
+)
+
+
+def rodin_reflect(question, factual_answer, claude_path, claude_model=None):
+    prompt = RODIN_PROMPT.format(question=question, answer=factual_answer)
+    cmd = [claude_path, "-p", prompt, "--output-format", "json"]
+    if claude_model:
+        cmd.extend(["--model", claude_model])
+    result = subprocess.run(
+        cmd,
+        capture_output=True, text=True, timeout=120,
+        cwd=tempfile.gettempdir()
     )
     if result.returncode != 0:
         raise Exception(result.stderr.strip())

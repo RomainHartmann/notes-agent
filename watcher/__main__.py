@@ -2,7 +2,7 @@ import time
 
 from watcher.config import log, load_config
 from watcher.notes import get_unprocessed_note_ids, get_note_content, write_response_to_note, tag_note
-from watcher.analysis import analyze_with_claude, reflect_with_code
+from watcher.analysis import analyze_with_claude, reflect_with_code, rodin_reflect
 from watcher.tasks import build_task_prompt, launch_claude_code
 from watcher.notifications import send_pushover
 from watcher.state import load_state, save_state, content_hash
@@ -22,6 +22,10 @@ def process_item(item, note_id, title, body, config):
             response = reflect_with_code(title, body, project_path, claude_path, claude_model)
         else:
             response = item["response"]
+        if item.get("needs_rodin"):
+            question = f"{title}\n{body}" if body else title
+            rodin_opinion = rodin_reflect(question, response, claude_path, claude_model)
+            response = f"{response}\n\n[Rodin] {rodin_opinion}"
         write_response_to_note(note_id, response)
         send_pushover(f"\U0001f4a1 {title}", item["pushover_summary"], config)
         tag_note(note_id, done_tag)
