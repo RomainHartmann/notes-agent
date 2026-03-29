@@ -113,13 +113,21 @@ def launch_claude_code(project_path, task_prompt, note_id, item, config, title="
         f.write('    cd "$REPO"\n')
         f.write(f"    git checkout {dev_branch} 2>/dev/null || git checkout -b {dev_branch}\n")
         f.write(f'    git pull --rebase origin {dev_branch} 2>/dev/null || true\n')
-        f.write(f'    git merge "$BRANCH"\n')
-        f.write(f'    git push -u origin {dev_branch}\n')
-        f.write('    rmdir "$LOCKDIR"\n\n')
-        f.write('    git worktree remove "$WORKTREE" --force\n')
-        f.write('    git branch -d "$BRANCH"\n')
+        f.write(f'    if git merge "$BRANCH"; then\n')
+        f.write(f'        git push -u origin {dev_branch}\n')
+        f.write('        rmdir "$LOCKDIR"\n')
+        f.write('        git worktree remove "$WORKTREE" --force\n')
+        f.write('        git branch -d "$BRANCH"\n')
+        f.write(f'        NOTIF_TITLE="Task done: {safe_title}"\n')
+        f.write('    else\n')
+        f.write('        git merge --abort 2>/dev/null || true\n')
+        f.write('        rmdir "$LOCKDIR"\n')
+        f.write('        git push -u origin "$BRANCH"\n')
+        f.write('        git worktree remove "$WORKTREE" --force\n')
+        f.write(f'        NOTIF_TITLE="Task done (branch): {safe_title}"\n')
+        f.write('    fi\n')
         f.write(f'    curl -s -F "token={pushover_token}" -F "user={pushover_user}" '
-                f'-F "title=Task done: {safe_title}" '
+                f'-F "title=$NOTIF_TITLE" '
                 f'-F "message={target} - $BRANCH" '
                 f'https://api.pushover.net/1/messages.json > /dev/null\n')
         f.write("fi\n\n")
