@@ -1,40 +1,53 @@
-# Project instructions
+# Notes Agent
+
+iPhone note → Claude Code → auto-implemented feature.
+
+## Commands
+
+```
+python -m watcher             # Single poll iteration (launchd runs every 60s)
+chmod +x install.sh && ./install.sh  # Install launchd agent
+```
+
+## Architecture
+
+```
+watcher/
+├── __main__.py      # Entry point, main loop, debounce logic
+├── analysis.py      # Claude CLI prompts (analysis, reflection, rodin)
+├── tasks.py         # Shell script generation, worktree execution
+├── notes.py         # AppleScript bridge to Apple Notes
+├── notifications.py # Pushover push notifications
+├── state.py         # Content hashing for change detection
+└── config.py        # Config loading, logging
+```
+
+## Stack
+
+- Python 3 (stdlib only, zero pip dependencies)
+- macOS: AppleScript + launchd + Terminal.app
+- Claude Code CLI (`claude -p` for analysis, `claude` interactive for tasks)
+- Git worktrees for parallel isolated execution
+- Pushover for mobile notifications
+
+## Key Design Decisions
+
+- No direct Claude API calls — everything goes through Claude Code CLI
+- One file = one responsibility
+- No comments in the code
+- Apple Notes body is HTML — responses use `<br>`, not `\n`
+- Autonomous mode: `--dangerously-skip-permissions` with CLAUDE.md as the only guardrail
 
 ## Language
 
-- Always communicate in French with the user
-- Code, comments, commits, docs, README: all in English
-- No comments in the code
-- One file = one responsibility
+- Communicate with user in French
+- Code, commits, docs, README: English
 
 ## Git
 
-- Commits: `type(scope): description` (e.g. `feat(auth): add JWT refresh`)
+- Commits: `type(scope): description` (e.g. `feat(tasks): add PR mode`)
 - Types: feat, fix, refactor, test, chore, docs
-- One commit per logical change, not per file
-- When the user validates a feature ("ok", "c'est bon", "valide", "push", "ship it"), run `git add . && git commit && git push` immediately without asking
-- Never leave uncommitted work after validation
-- Never discard/revert code (git checkout, git reset, etc.) without asking
-
-## Co-Authored-By
-
-- Add `Co-Authored-By: Claude <noreply@anthropic.com>` only when Claude genuinely contributed to the code (logic, architecture, implementation)
-- Do not add it on trivial commits (variable rename, formatting, file move)
-
-## Permissions
-
-- Never read config.json - it contains personal credentials and paths
-
-## Known Gotchas
-
-- [2026-03-25] Claude Code does not always have permissions for git commands. Git operations (checkout, branch, commit, merge) are hardcoded in the shell wrapper script, not delegated to Claude Code.
-- [2026-03-25] The launchd PATH is limited (/usr/bin:/bin:/usr/sbin:/sbin). If `claude` is not found, use `claude_path` in config.json with the absolute path.
-- [2026-03-25] Apple Notes body is HTML. Responses written to notes must use `<br>` for line breaks, not `\n`.
-- [2026-03-25] `claude -p` wraps JSON responses in markdown fences (` ```json ... ``` `) even when told not to. Always strip fences before parsing.
-- [2026-03-25] AppleScript `write` uses Mac Roman encoding by default. Always read temp files with `encoding="mac_roman"` in Python.
-- [2026-03-25] Claude Code runs with `--dangerously-skip-permissions` for unattended operation. The CLAUDE.md in each target repo is the only guardrail.
-- [2026-03-25] Claude Code in `-p` mode may still refuse destructive Bash commands (like `rm`) even with `--dangerously-skip-permissions`. File creation and editing work fine, but deletion is unreliable.
-
-## Lessons Learned
-
-- [2026-03-25] No direct Claude API in this project. Everything goes through Claude Code CLI (`claude -p` for analysis, `claude` interactive for tasks). Never add HTTP calls to api.anthropic.com.
+- One commit per logical change
+- When user validates ("ok", "c'est bon", "push", "ship it") → commit and push immediately
+- Never discard/revert code without asking
+- Co-Authored-By: Claude <noreply@anthropic.com> only on genuine contributions
