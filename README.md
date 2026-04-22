@@ -65,6 +65,8 @@ The watcher queries Apple Notes via AppleScript, sends each unprocessed note to 
 
 The watcher runs in the background, every 60 seconds.
 
+**Do not install the project under `~/Documents/`.** macOS TCC denies file access in `~/Documents/` to processes spawned by launchd, which makes the watcher fail silently with exit 78 (`PermissionError: [Errno 1] Operation not permitted`). Use a path outside `~/Documents/` (e.g. `~/code/notes-agent/`).
+
 **Important:** Claude Code runs with `--dangerously-skip-permissions` for unattended operation. Each target repo **must** have a well-configured `.claude/CLAUDE.md` before being used with the watcher. This file acts as the primary guardrail for autonomous code generation.
 
 ## Configuration
